@@ -16,7 +16,7 @@ class MakeFeatures(BaseEstimator):
         self.dep_capital = dep_capital
         self.arr_capital = arr_capital
         self.route = route
-        self.uc=uc
+        self.uc = uc
         self.log_dist = log_dist
         self.new_dep_time = new_dep_time
         self.hour_imp = hour_imp
@@ -216,13 +216,8 @@ class MakeFeatures(BaseEstimator):
         else:
             return pd.concat([X[['DepTime']], self.new_frame], axis=1, sort=False)
     
-    def transform(self, X:pd.DataFrame):
+    def transform(self):
         try:
             return self.new_frame
         except AttributeError:
             print('You should fit classifier MakeFeatures before transform')
-            
-
-def make_predict(prediction : pd.Series, file_name : str):
-	PATH_ANS = 'csv'
-	return pd.Series(prediction, name='dep_delayed_15min').to_csv(PATH_ANS + '/' + file_name+'.csv', index_label='id', header=True)
