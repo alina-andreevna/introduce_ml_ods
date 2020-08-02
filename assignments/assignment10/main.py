@@ -6,6 +6,7 @@ import streamlit as st
 import pandas as pd
 # from sklearn.ensemble import RandomForestClassifier
 # from catboost import CatBoostClassifier, Pool
+from xgboost import Booster, XGBClassifier
 from package import MakeFeatures
 from joblib import load
 
@@ -57,26 +58,61 @@ def user_features(df: pd.DataFrame):
     return df_features
 
 
-def feature_construct(df: pd.DataFrame):
-    mf = MakeFeatures(is_weekend=1,
-                      seasons=1,
-                      day_of_month=1,
-                      dep_capital=1,
-                      arr_capital=1,
-                      route=1,
-                      log_dist=1,
-                      uc=1,
-                      time=1,
-                      new_dep_time=1,
-                      hour_imp=1)
-    return mf.fit_transform(df)
+def feature_construct(df: pd.DataFrame, predicator: str):
+    if predicator == 'XGBoost':
+        mf = MakeFeatures(is_weekend=1,
+                          seasons=1,
+                          day_of_month=1,
+                          dep_capital=1,
+                          arr_capital=1,
+                          route=1,
+                          log_dist=1,
+                          uc=1,
+                          time=1,
+                          new_dep_time=1,
+                          hour_imp=1)
+    else:
+        mf = MakeFeatures(is_weekend=1,
+                              seasons=1,
+                              day_of_month=1,
+                              dep_capital=1,
+                              arr_capital=1,
+                              route=0,
+                              log_dist=1,
+                              uc=1,
+                              time=1,
+                              new_dep_time=1,
+                              hour_imp=1)
+
+    mf.fit(df)
+    df_modified = mf.fit_transform(df)
+    return df_modified
+
+
+def prepare_user_data(df: pd.DataFrame, predicator: str):
+    if predicator == 'XGBoost':
+        with open('train_columns/col_train_xgb.txt', 'r') as fid:
+            columns = fid.read().split(sep='\n')
+    else:
+        with open('train_columns/col_train_catb.txt', 'r') as fid:
+            columns = fid.read().split(sep='\n')
+    columns.pop(-1)
+    diff_features = set(columns) - set(df.columns.tolist())
+    new_data = dict.fromkeys(list(diff_features), [0])
+    dataframe = pd.concat([df, pd.DataFrame.from_dict(new_data)], axis=1, sort=False)
+
+    return dataframe.reindex(columns=columns)
 
 
 def make_predict(df: pd.DataFrame, classifier: str):
     if classifier == "XGBoost":
-        clf = load('xgb.joblib')
+        clf = XGBClassifier()
+        booster = Booster()
+        booster.load_model('models/xgbclf_save_model.model')
+        clf._Booster = booster
+
     else:
-        clf = load('catb.joblib')
+        clf = load('models/catb.joblib')
 
     prediction = clf.predict(df)
     probability = clf.predict_proba(df)
@@ -84,33 +120,45 @@ def make_predict(df: pd.DataFrame, classifier: str):
     return prediction, probability
 
 
+def main():
 
-df = pd.read_csv('../../data/flight_delays_train.csv')
+    df_train = pd.read_csv('../../data/flight_delays_train.csv').drop(['dep_delayed_15min'], axis=1)
+
+    st.write("""
+    # Simple App for Final task of ODS.ai machine learning course
+    """)
+
+    st.write("""
+    ### This app predicts the 15 minutes delay of flights for user features. 
+    ### Please, enter parameters to predict in sidebar on the left side, choose model for predict and push "Predict" 
+    ### button. You can see result (delayed your flight or no delayed) and result probability.
+    """)
+
+    st.write("""
+        ### Kaggle InClass cometition: https://www.kaggle.com/c/flight-delays-2017
+        """)
+
+    st.write("")
+    st.write("")
+
+    user_df = user_features(df_train)
+
+    st.write('User Input parameters (features modified for correct preprocessing)')
+    st.write(user_df)
+
+    predicator = st.selectbox(
+            'Choose model',
+            ['XGBoost', 'CatBoost'])
+
+    modified_df = feature_construct(user_df, predicator)
+
+    dataframe_for_predict = prepare_user_data(modified_df, predicator)
+
+    if st.button('Predict delay'):
+        predict, predict_proba = make_predict(dataframe_for_predict, predicator)
+        st.write("Result prediction:", predict)
+        st.write("Result probability of prediction:", predict_proba)
 
 
-st.write("""
-# Simple App for Final task of ODS.ai machine learning course
-""")
-
-st.write("""
-### This app predicts the 15 minutes delay of flights for user features. 
-### Please, enter parameters to predict in sidebar on the left side, choose model for predict and push "Predict" button. You can see result (depayed your flight or no delayed) and result probability.
-""")
-
-st.write("")
-st.write("")
-
-user_df = user_features(df)
-
-st.write('User Input parameters (features modified for correct preprocessing)')
-st.write(user_df)
-
-modified_df = feature_construct(user_df)
-
-predicator = st.selectbox(
-        'Choose model',
-        ['XGBoost', 'CatBoost'])
-
-if st.button('Predict delay'):
-    st.write('prediction: %s' % make_predict(modified_df, predicator)[0])
-    st.write('probability: %s' % make_predict(modified_df, predicator)[1])
+if __name__ == "__main__":
+    main()
