@@ -127,16 +127,16 @@ def main():
     st.write("""
     # Simple App for Final task of ODS.ai machine learning course
     """)
+    st.write('### [Kaggle InClass cometition](https://www.kaggle.com/c/flight-delays-2017)')
 
     st.write("""
-    ### This app predicts the 15 minutes delay of flights for user features. 
-    ### Please, enter parameters to predict in sidebar on the left side, choose model for predict and push "Predict" 
-    ### button. You can see result (delayed your flight or no delayed) and result probability.
-    """)
-
+     This app predicts the 15 minutes delay of flights for user features. """)
     st.write("""
-        ### Kaggle InClass cometition: https://www.kaggle.com/c/flight-delays-2017
-        """)
+     Please, enter parameters to predict in sidebar on the left side, choose model for predict and push *Predict* button. You can see result (delayed your flight or no delayed) and result probability.""")
+
+    st.write('Two trained modules available: **XGBClassifier** (kaggle score = 0.7352) and **CatboostClassifier** (kaggle score=0.7458)')
+    st.write('The training processes are available in Jupyter Notebooks in [repo]()')
+
 
     st.write("")
     st.write("")
@@ -156,8 +156,7 @@ def main():
 
     if st.button('Predict delay'):
         predict, predict_proba = make_predict(dataframe_for_predict, predicator)
-        st.write("Result prediction:", predict)
-        st.write("Result probability of prediction:", predict_proba)
+        st.write("Probability of delay:", predict_proba[0][1])
 
 
 if __name__ == "__main__":
