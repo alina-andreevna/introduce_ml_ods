@@ -8,7 +8,15 @@ from numpy import round
 from catboost import CatBoostClassifier
 from xgboost import Booster, XGBClassifier
 from package import MakeFeatures
+from seaborn import countplot
 
+
+def make_hist(df: pd.DataFrame):
+    feature = st.selectbox(
+        'feature for graph',
+        ['Month', 'DayOfWeek', 'DayofMonth'])
+    countplot(x=feature, data=df, hue='dep_delayed_15min')
+    st.pyplot()
 
 def user_features(df: pd.DataFrame):
 
@@ -140,8 +148,6 @@ def make_predict(df: pd.DataFrame, classifier: str):
 
 def main():
 
-    df_train = pd.read_csv('../../data/flight_delays_train.csv').drop(['dep_delayed_15min'], axis=1)
-
     st.write("""
     # Simple App for Final task of ODS.ai machine learning course
     """)
@@ -158,6 +164,12 @@ def main():
 
     st.write("")
     st.write("")
+    st.write('### Some graphs with training data')
+    df_train = pd.read_csv('../../data/flight_delays_train.csv')
+
+    make_hist(df_train)
+
+    st.write('### Make prediction')
 
     user_df = user_features(df_train)
 
