@@ -9,14 +9,12 @@ user_df = df_train[df_train.Month == 'c-8']
 print(user_df)
 
 import streamlit as st
-# from catboost import CatBoostClassifier
-from xgboost import Booster, XGBClassifier
+from catboost import CatBoostClassifier
+# from xgboost import Booster, XGBClassifier
 
 
-clf = XGBClassifier()
-booster = Booster()
-booster.load_model('models/xgbclf_save_model.model')
-clf._Booster = booster
+clf = CatBoostClassifier()
+clf.load_model('models/cbcclf_model')
 
 
 print('load success!')
@@ -24,20 +22,13 @@ st.write("""
     ### Kaggle InClass cometition: https://www.kaggle.com/c/flight-delays-2017
     ### load success!
     """)
-
-def prepare_user_data(df: pd.DataFrame, predicator: str):
-    if predicator == 'XGBoost':
-        with open('train_columns/col_train_xgb.txt', 'r') as fid:
-            columns = fid.read().split(sep='\n')
-    else:
-        with open('train_columns/col_train_catb.txt', 'r') as fid:
-            columns = fid.read().split(sep='\n')
-    columns.pop(-1)
-    diff_features = set(columns) - set(df.columns.tolist())
-    new_data = dict.fromkeys(list(diff_features), [0])
-    dataframe = pd.concat([df, pd.DataFrame.from_dict(new_data)], axis=1, sort=False)
-
-    return dataframe.reindex(columns=columns)
+#
+def prepare_user_data(df: pd.DataFrame, df_first: pd.DataFrame):
+    X = pd.concat([df, df_first.Dest, df_first.Origin], axis=1, sort=False)
+    X['UQ_DEST'] = df_first.UniqueCarrier + '_' + df_first.Dest
+    X['UQ_ORIG'] = df_first.UniqueCarrier + '_' + df_first.Origin
+    X.dropna(inplace=True)
+    return X
 
 def feature_construct(df: pd.DataFrame, predicator: str):
     if predicator == 'XGBoost':
@@ -69,11 +60,13 @@ def feature_construct(df: pd.DataFrame, predicator: str):
     df_modified = mf.fit_transform(df)
     return df_modified
 
-modified_df = feature_construct(user_df, 'XGBoost')
+modified_df = feature_construct(user_df, 'CatBoost')
 
-dataframe_for_predict = prepare_user_data(modified_df, 'XGBoost')
+print(modified_df)
 
-print(dataframe_for_predict)
+dataframe_for_predict = prepare_user_data(modified_df, user_df)
+
+print(dataframe_for_predict, dataframe_for_predict.columns)
 
 prediction = clf.predict(dataframe_for_predict)
 probability = clf.predict_proba(dataframe_for_predict)
