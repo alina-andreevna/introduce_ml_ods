@@ -18,6 +18,7 @@ def make_hist(df: pd.DataFrame):
     countplot(x=feature, data=df, hue='dep_delayed_15min')
     st.pyplot()
 
+
 def user_features(df: pd.DataFrame):
 
     option_month = st.sidebar.selectbox(
@@ -80,16 +81,16 @@ def feature_construct(df: pd.DataFrame, predicator: str):
                           hour_imp=1)
     else:
         mf = MakeFeatures(is_weekend=1,
-                              seasons=1,
-                              day_of_month=1,
-                              dep_capital=1,
-                              arr_capital=1,
-                              route=0,
-                              log_dist=1,
-                              uc=1,
-                              time=1,
-                              new_dep_time=1,
-                              hour_imp=1)
+                          seasons=1,
+                          day_of_month=1,
+                          dep_capital=1,
+                          arr_capital=1,
+                          route=0,
+                          log_dist=1,
+                          uc=1,
+                          time=1,
+                          new_dep_time=1,
+                          hour_imp=1)
 
     mf.fit(df)
     df_modified = mf.fit_transform(df)
@@ -118,13 +119,11 @@ def prepare_user_data(df: pd.DataFrame, df_first: pd.DataFrame, predicator: str)
         dataframe = pd.concat([df, pd.DataFrame.from_dict(new_data)], axis=1, sort=False)
         dataframe_new = dataframe.reindex(columns=columns)
 
+        dataframe_new.Dest = df_first.Dest
+        dataframe_new.Origin = df_first.Origin
 
-
-        dataframe_new .Dest = df_first.Dest
-        dataframe_new .Origin = df_first.Origin
-
-        dataframe_new ['UQ_DEST'] = df_first.UniqueCarrier + '_' + df_first.Dest
-        dataframe_new ['UQ_ORIG'] = df_first.UniqueCarrier + '_' + df_first.Origin
+        dataframe_new['UQ_DEST'] = df_first.UniqueCarrier + '_' + df_first.Dest
+        dataframe_new['UQ_ORIG'] = df_first.UniqueCarrier + '_' + df_first.Origin
 
         return dataframe_new
 
@@ -160,7 +159,6 @@ def main():
 
     st.write('Two trained modules available: **XGBClassifier** (kaggle score = 0.7352) and **CatboostClassifier** (kaggle score=0.7458)')
     st.write('The training processes are available in Jupyter Notebooks in [repo](https://github.com/alina-andreevna/introduce_ml_ods)')
-
 
     st.write("")
     st.write("")
